@@ -1,0 +1,7 @@
+name: Mega menu
+description: 'Allows you to create mega menus.'
+type: module
+core: 8.x
+dependencies:
+  - layout_plugin
+  - menu_link_content

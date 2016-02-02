@@ -1,0 +1,5 @@
+mega_menu.add_form:
+  route_name: mega_menu.add_form
+  title: 'Add mega menu'
+  appears_on:
+    - entity.mega_menu.collection

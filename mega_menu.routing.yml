@@ -1,0 +1,31 @@
+entity.mega_menu.collection:
+  path: '/admin/structure/mega-menu'
+  defaults:
+    _entity_list: 'mega_menu'
+    _title: 'Mega menus'
+  requirements:
+    _permission: 'administer mega menus'
+
+mega_menu.add_form:
+  path: '/admin/structure/mega-menu/add'
+  defaults:
+    _entity_form: 'mega_menu.add'
+    _title: 'Add mega menu'
+  requirements:
+    _permission: 'administer mega menus'
+
+entity.mega_menu.edit_form:
+  path: '/admin/structure/mega-menu/{mega_menu}'
+  defaults:
+    _entity_form: 'mega_menu.edit'
+    _title: 'Edit mega menu'
+  requirements:
+    _permission: 'administer mega menus'
+
+entity.mega_menu.delete_form:
+  path: '/admin/structure/mega-menu/{mega_menu}/delete'
+  defaults:
+    _entity_form: 'mega_menu.delete'
+    _title: 'Delete mega menu'
+  requirements:
+    _permission: 'administer mega menus'

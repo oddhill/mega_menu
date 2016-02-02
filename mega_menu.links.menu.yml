@@ -1,0 +1,5 @@
+entity.mega_menu.collection:
+  title: 'Mega menus'
+  parent: system.admin_structure
+  description: 'Manage mega menus.'
+  route_name: entity.mega_menu.collection
