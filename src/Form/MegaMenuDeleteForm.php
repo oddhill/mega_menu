@@ -3,26 +3,38 @@
 namespace Drupal\mega_menu\Form;
 
 use Drupal\Core\Entity\EntityConfirmFormBase;
+use Drupal\Core\Form\FormStateInterface;
 
 class MegaMenuDeleteForm extends EntityConfirmFormBase {
 
   /**
-   * Returns the question to ask the user.
-   *
-   * @return string
-   *   The form question. The page title will be set to this value.
+   * {@inheritdoc}
    */
   public function getQuestion() {
-    // TODO: Implement getQuestion() method.
+    return $this->t('Are you sure you want to remove the @label mega menu.', [
+      '@label' => $this->entity->label(),
+    ]);
   }
 
   /**
-   * Returns the route to go to if the user cancels the action.
-   *
-   * @return \Drupal\Core\Url
-   *   A URL object.
+   * {@inheritdoc}
    */
   public function getCancelUrl() {
-    // TODO: Implement getCancelUrl() method.
+    return $this->entity->toUrl('collection');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    parent::submitForm($form, $form_state);
+
+    $this->entity->delete();
+
+    drupal_set_message($this->t('The @label mega menu has been removed.', [
+    '@label' => $this->entity->label(),
+    ]));
+
+    $form_state->setRedirectUrl($this->getCancelUrl());
   }
 }
