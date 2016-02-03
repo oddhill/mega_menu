@@ -5,12 +5,20 @@ namespace Drupal\mega_menu\Form;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Menu\MenuLinkTreeInterface;
 use Drupal\layout_plugin\Plugin\Layout\LayoutPluginManagerInterface;
 use Drupal\mega_menu\Contract\MegaMenuInterface;
 use Drupal\menu_link_content\MenuLinkContentInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 abstract class MegaMenuFormBase extends EntityForm {
+
+  /**
+   * The mega menu entity.
+   *
+   * @var MegaMenuInterface
+   */
+  protected $entity;
 
   /**
    * The layout plugin manager.
@@ -20,13 +28,26 @@ abstract class MegaMenuFormBase extends EntityForm {
   protected $layoutPluginManager;
 
   /**
+   * The Drupal menu link tree builder.
+   *
+   * @var \Drupal\Core\Menu\MenuLinkTreeInterface
+   */
+  protected $menuLinkTreeInterface;
+
+  /**
    * MegaMenuFormBase constructor.
    *
    * @param LayoutPluginManagerInterface $layoutPluginManager
    *   The layout plugin manager.
+   * @param MenuLinkTreeInterface $menuLinkTreeInterface
+   *   The Drupal menu link tree builder.
    */
-  public function __construct(LayoutPluginManagerInterface $layoutPluginManager) {
+  public function __construct(
+    LayoutPluginManagerInterface $layoutPluginManager,
+    MenuLinkTreeInterface $menuLinkTreeInterface
+  ) {
     $this->layoutPluginManager = $layoutPluginManager;
+    $this->menuLinkTreeInterface = $menuLinkTreeInterface;
   }
 
   /**
@@ -34,16 +55,10 @@ abstract class MegaMenuFormBase extends EntityForm {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('plugin.manager.layout_plugin')
+      $container->get('plugin.manager.layout_plugin'),
+      $container->get('menu.link_tree')
     );
   }
-
-  /**
-   * The mega menu entity.
-   *
-   * @var MegaMenuInterface
-   */
-  protected $entity;
 
   /**
    * {@inheritdoc}
