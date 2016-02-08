@@ -29,3 +29,11 @@ entity.mega_menu.delete_form:
     _title: 'Delete mega menu'
   requirements:
     _permission: 'administer mega menus'
+
+mega_menu.block_library:
+  path: '/admin/structure/mega-menu/{mega_menu}/block/library'
+  defaults:
+    _controller: '\Drupal\mega_menu\Controller\MegaMenuController::blockLibrary'
+    _title: 'Block library'
+  requirements:
+    _permission: 'administer mega menus'
