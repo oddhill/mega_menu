@@ -5,7 +5,9 @@ namespace Drupal\mega_menu\Form;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Menu\MenuLinkTreeElement;
 use Drupal\Core\Menu\MenuLinkTreeInterface;
+use Drupal\Core\Menu\MenuTreeParameters;
 use Drupal\layout_plugin\Plugin\Layout\LayoutPluginManagerInterface;
 use Drupal\mega_menu\Contract\MegaMenuInterface;
 use Drupal\menu_link_content\MenuLinkContentInterface;
@@ -30,24 +32,24 @@ abstract class MegaMenuFormBase extends EntityForm {
   /**
    * The Drupal menu link tree builder.
    *
-   * @var \Drupal\Core\Menu\MenuLinkTreeInterface
+   * @var MenuLinkTreeInterface
    */
-  protected $menuLinkTreeInterface;
+  protected $menuLinkTree;
 
   /**
    * MegaMenuFormBase constructor.
    *
    * @param LayoutPluginManagerInterface $layoutPluginManager
    *   The layout plugin manager.
-   * @param MenuLinkTreeInterface $menuLinkTreeInterface
+   * @param MenuLinkTreeInterface $menuLinkTree
    *   The Drupal menu link tree builder.
    */
   public function __construct(
     LayoutPluginManagerInterface $layoutPluginManager,
-    MenuLinkTreeInterface $menuLinkTreeInterface
+    MenuLinkTreeInterface $menuLinkTree
   ) {
     $this->layoutPluginManager = $layoutPluginManager;
-    $this->menuLinkTreeInterface = $menuLinkTreeInterface;
+    $this->menuLinkTree = $menuLinkTree;
   }
 
   /**
@@ -137,6 +139,17 @@ abstract class MegaMenuFormBase extends EntityForm {
   }
 
   /**
+   * Get a list of default regions. This includes the no region option.
+   *
+   * @return array
+   */
+  protected function getDefaultRegions() {
+   return [
+     MegaMenuInterface::NO_REGION => $this->t('No region'),
+   ];
+  }
+
+  /**
    * Get a list of regions for the specified layout.
    *
    * @param string $layout
@@ -144,37 +157,34 @@ abstract class MegaMenuFormBase extends EntityForm {
    * @return array
    */
   protected function getLayoutRegions($layout) {
+    $default_regions = $this->getDefaultRegions();
 
-    try {
-      $definition = $this->layoutPluginManager
-        ->getDefinition($layout);
-    }
-    catch (PluginNotFoundException $e) {
-      return [];
+    $definition = $this->layoutPluginManager
+      ->getDefinition($layout, FALSE);
+
+    if (!$definition) {
+      return $default_regions;
     }
 
     if (!isset($definition['region_names']) || !count($definition['region_names'])) {
-      return [];
+      return $default_regions;
     }
 
-    return $definition['region_names'];
+    return $definition['region_names'] + $default_regions;
   }
 
   /**
-   * Get a list of menu items for the specified menu.
+   * Get a list of menu link elements for the specified menu.
    *
    * @param string $menu
    *
-   * @return MenuLinkContentInterface[]
+   * @return MenuLinkTreeElement[]
    */
-  protected function getMenuLinkItems($menu) {
-    $properties = [
-      'menu_name' => $menu
-    ];
+  protected function getMenuLinkElements($menu) {
+    $parameters = (new MenuTreeParameters())
+      ->setMaxDepth(1);
 
-    return $this->entityTypeManager
-      ->getStorage('menu_link_content')
-      ->loadByProperties($properties);
+    return $this->menuLinkTree->load($menu, $parameters);
   }
 
   /**
