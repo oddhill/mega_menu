@@ -12,6 +12,12 @@ interface MegaMenuInterface extends ConfigEntityInterface {
   const NO_LAYOUT = 'mega_menu.no_layout';
 
   /**
+   * Represents a mega menu link item that does not have a region. And also
+   * used to represent a no region in lists.
+   */
+  const NO_REGION = 'mega_menu.no_region';
+
+  /**
    * Get the machine name of the target menu.
    *
    * @return string
