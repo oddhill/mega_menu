@@ -2,7 +2,6 @@
 
 namespace Drupal\mega_menu\Form;
 
-use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Menu\MenuLinkTreeElement;
@@ -10,7 +9,6 @@ use Drupal\Core\Menu\MenuLinkTreeInterface;
 use Drupal\Core\Menu\MenuTreeParameters;
 use Drupal\layout_plugin\Plugin\Layout\LayoutPluginManagerInterface;
 use Drupal\mega_menu\Contract\MegaMenuInterface;
-use Drupal\menu_link_content\MenuLinkContentInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 abstract class MegaMenuFormBase extends EntityForm {
@@ -67,6 +65,8 @@ abstract class MegaMenuFormBase extends EntityForm {
    */
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
+
+    $form['#attached']['library'][] = 'mega_menu/admin';
 
     $form['general'] = [
       '#title' => $this->t('General details'),
@@ -158,6 +158,10 @@ abstract class MegaMenuFormBase extends EntityForm {
    */
   protected function getLayoutRegions($layout) {
     $default_regions = $this->getDefaultRegions();
+
+    if ($layout === MegaMenuInterface::NO_LAYOUT) {
+      return $default_regions;
+    }
 
     $definition = $this->layoutPluginManager
       ->getDefinition($layout, FALSE);

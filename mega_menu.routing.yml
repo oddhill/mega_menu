@@ -1,3 +1,4 @@
+# Mega menu routes.
 entity.mega_menu.collection:
   path: '/admin/structure/mega-menu'
   defaults:
@@ -30,6 +31,7 @@ entity.mega_menu.delete_form:
   requirements:
     _permission: 'administer mega menus'
 
+# Block routes.
 mega_menu.block_library:
   path: '/admin/structure/mega-menu/{mega_menu}/block/library'
   defaults:
@@ -37,3 +39,31 @@ mega_menu.block_library:
     _title: 'Block library'
   requirements:
     _permission: 'administer mega menus'
+
+mega_menu.block_add:
+  path: '/admin/structure/mega-menu/{mega_menu}/block/{block_id}/add'
+  defaults:
+    _form: '\Drupal\mega_menu\Form\BlockAddForm'
+    _title: 'Add block'
+  requirements:
+    _permission: 'administer mega menus'
+
+mega_menu.block_edit:
+  path: '/admin/structure/mega-menu/{mega_menu}/block/{block_id}/edit'
+  defaults:
+    _form: '\Drupal\mega_menu\Form\BlockEditForm'
+    _title: 'Edit block'
+  requirements:
+    _permission: 'administer mega menus'
+
+mega_menu.block_delete:
+  path: '/admin/structure/mega-menu/{mega_menu}/block/{block_id}/remove'
+  defaults:
+    _form: '\Drupal\mega_menu\Form\BlockDeleteForm'
+    _title: 'Remove block'
+  requirements:
+    _permission: 'administer mega menus'
+  options:
+    parameters:
+      mega_menu:
+        type: entity:mega_menu

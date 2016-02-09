@@ -4,6 +4,7 @@ namespace Drupal\mega_menu\Form;
 
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\Html;
+use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\mega_menu\Contract\MegaMenuInterface;
@@ -21,6 +22,8 @@ class MegaMenuEditForm extends MegaMenuFormBase {
 
     $table_header = [
       'label' => $this->t('Label'),
+      'category' => $this->t('Category'),
+      'region' => $this->t('Region'),
       'weight' => $this->t('Weight'),
       'operations' => $this->t('Operations'),
     ];
@@ -31,10 +34,15 @@ class MegaMenuEditForm extends MegaMenuFormBase {
       '#tree' => TRUE,
     ];
 
+    $blocks = $this->entity->getAllBlocksSortedByLink();
+
     foreach ($menu_links_elements as $link_element_id => $link_element) {
-      $regions = $form_state->hasValue(['links', $link_element_id, 'layout'])
-        ? $this->getLayoutRegions($form_state->getValue(['links', $link_element_id, 'layout']))
-        : $this->getDefaultRegions();
+      // Replace any dots with a underscore since dots are not supported as
+      // keys in the configuration data.
+      $link_element_id = str_replace('.', '_', $link_element_id);
+
+      $link_layout = $this->entity->getLinkLayout($link_element_id);
+      $regions = $this->getLayoutRegions($link_layout);
 
       $link_id = Html::getId($link_element_id);
 
@@ -47,6 +55,7 @@ class MegaMenuEditForm extends MegaMenuFormBase {
         '#type' => 'select',
         '#title' => $this->t('Layout'),
         '#options' => $layout_options,
+        '#default_value' => $link_layout,
         '#ajax' => [
           'callback' => '::onLayoutSelect',
           'wrapper' => "mega-menu-link-{$link_id}-blocks-wrapper",
@@ -64,6 +73,7 @@ class MegaMenuEditForm extends MegaMenuFormBase {
         '#empty' => $this->t('There are no regions for blocks.'),
       ];
 
+      // Add regions.
       foreach ($regions as $region_key => $region_name) {
         // Tabledrag stuff.
         $form['links'][$link_element_id]['blocks']['#tabledrag'][] = [
@@ -93,7 +103,7 @@ class MegaMenuEditForm extends MegaMenuFormBase {
           $form['links'][$link_element_id]['blocks'][$region_key]['title'] = [
             '#markup' => $region_name,
             '#wrapper_attributes' => [
-              'colspan' => 3,
+              'colspan' => 5,
             ],
           ];
         }
@@ -120,7 +130,7 @@ class MegaMenuEditForm extends MegaMenuFormBase {
               ],
             ]),
             '#wrapper_attributes' => [
-              'colspan' => 3,
+              'colspan' => 5,
             ],
             '#attributes' => [
               'class' => ['use-ajax', 'button', 'button--small'],
@@ -132,12 +142,20 @@ class MegaMenuEditForm extends MegaMenuFormBase {
           ];
         }
 
+        $blocks_by_region = isset($blocks[$link_element_id])
+          ? $blocks[$link_element_id]->getAllByRegion()
+          : [];
+
+        $region_message_class = empty($blocks_by_region[$region_key])
+          ? 'region-empty'
+          : 'region-populated';
+
         $form['links'][$link_element_id]['blocks'][$region_key . '-message'] = [
           '#attributes' => [
             'class' => [
               'region-message',
               'region-' . $region_key . '-message',
-              empty($blocks) ? 'region-empty' : 'region-populated',
+              $region_message_class
             ],
           ],
         ];
@@ -145,18 +163,146 @@ class MegaMenuEditForm extends MegaMenuFormBase {
         $form['links'][$link_element_id]['blocks'][$region_key . '-message']['message'] = [
           '#markup' => '<em>' . $this->t('No blocks in this region') . '</em>',
           '#wrapper_attributes' => [
-            'colspan' => 3,
+            'colspan' => 5,
           ],
         ];
+
+        if (!isset($blocks_by_region[$region_key])) {
+          continue;
+        }
+
+        /** @var BlockPluginInterface $block */
+        foreach ($blocks_by_region[$region_key] as $block_id => $block) {
+          if (!isset($form['links'][$link_element_id])) {
+            continue;
+          }
+
+          $operations = [
+            'edit' => [
+              'title' => $this->t('Edit'),
+              'url' => Url::fromRoute('mega_menu.block_edit', [
+                'mega_menu' => $this->entity->id(),
+                'block_id' => $block_id,
+              ], [
+                'query' => [
+                  'link' => $link_element_id,
+                  'region' => $region_key,
+                ],
+              ]),
+              'attributes' => [
+                'class' => ['use-ajax', 'button', 'button--small'],
+                'data-dialog-type' => 'modal',
+                'data-dialog-options' => Json::encode([
+                  'width' => 700,
+                ]),
+              ],
+            ],
+            'delete' => [
+              'title' => $this->t('Delete'),
+              'url' => Url::fromRoute('mega_menu.block_delete', [
+                'mega_menu' => $this->entity->id(),
+                'block_id' => $block_id,
+              ], [
+                'query' => [
+                  'link' => $link_element_id,
+                ],
+              ]),
+              'attributes' => [
+                'class' => ['use-ajax', 'button', 'button--small'],
+                'data-dialog-type' => 'modal',
+                'data-dialog-options' => Json::encode([
+                  'width' => 700,
+                ]),
+              ],
+            ],
+          ];
+
+          $configuration = $block->getConfiguration();
+
+          $form['links'][$link_element_id]['blocks'][$block_id] = [
+            '#attributes' => [
+              'class' => ['draggable'],
+            ],
+            'label' => [
+              '#markup' => $block->label(),
+            ],
+            'category' => [
+              '#markup' => $block->getPluginDefinition()['category'],
+            ],
+            'region' => [
+              '#type' => 'select',
+              '#title' => $this->t('Region for @block block', ['@block' => $block->label()]),
+              '#title_display' => 'invisible',
+              '#default_value' => $region_key,
+              '#options' => $regions,
+              '#attributes' => [
+                'class' => [
+                  'block-region-select',
+                  'block-region-' . $region_key
+                ],
+              ],
+            ],
+            'weight' => [
+              '#type' => 'weight',
+              '#default_value' => isset($configuration['weight']) ? $configuration['weight'] : 0,
+              '#title' => $this->t('Weight for @block block', ['@block' => $block->label()]),
+              '#title_display' => 'invisible',
+              '#attributes' => [
+                'class' => ['block-weight', 'block-weight-' . $configuration['region']],
+              ],
+            ],
+            'operations' => [
+              '#type' => 'operations',
+              '#links' => $operations,
+            ],
+          ];
+        }
       }
     }
 
     return $form;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function buildEntity(array $form, FormStateInterface $form_state) {
+    $entity = clone $this->entity;
+
+    $entity->set('label', $form_state->getValue('label'));
+    $entity->set('name', $form_state->getValue('name'));
+    $entity->set('menu', $form_state->getValue('menu'));
+
+    foreach ($form_state->getValue('links', []) as $link_key => $link) {
+      $entity->setLinkLayout($link_key, $link['layout']);
+
+      if (!is_array($link['blocks']) || !count($link['blocks'])) {
+        continue;
+      }
+
+      foreach ($link['blocks'] as $block_id => $configuration) {
+        $this->entity->updateBlock($link_key, $block_id, $configuration);
+      }
+    }
+
+    return $entity;
+  }
+
+  /**
+   * AJAX callback for when a layout is selected.
+   *
+   * @param array $form
+   *   The form array.
+   * @param FormStateInterface $form_state
+   *   The form state instance.
+   *
+   * @return mixed
+   */
   public function onLayoutSelect(array $form, FormStateInterface $form_state) {
     $triggering_element = $form_state->getTriggeringElement();
     $link_element_id = $triggering_element['#attributes']['data-link-element-id'];
+
+    $this->save($form, $form_state);
 
     return $form['links'][$link_element_id]['blocks'];
   }

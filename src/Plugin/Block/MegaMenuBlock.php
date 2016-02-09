@@ -1,0 +1,284 @@
+<?php
+
+namespace Drupal\mega_menu\Plugin\Block;
+
+use Drupal\Core\Block\BlockBase;
+use Drupal\Core\Cache\Cache;
+use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Menu\MenuLinkTreeElement;
+use Drupal\Core\Menu\MenuLinkTreeInterface;
+use Drupal\Core\Menu\MenuTreeParameters;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Plugin\Context\ContextHandlerInterface;
+use Drupal\Core\Plugin\Context\ContextRepositoryInterface;
+use Drupal\Core\Plugin\ContextAwarePluginInterface;
+use Drupal\Core\Render\Element;
+use Drupal\layout_plugin\Plugin\Layout\LayoutInterface;
+use Drupal\layout_plugin\Plugin\Layout\LayoutPluginManagerInterface;
+use Drupal\mega_menu\Contract\MegaMenuInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
+/**
+ * Provides a 'Mega menu' block.
+ *
+ * @Block(
+ *   id = "mega_menu_block",
+ *   admin_label = @Translation("Mega menu"),
+ *   category = @Translation("Mega menu")
+ * )
+ */
+class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface {
+
+  /**
+   * @var EntityTypeManagerInterface
+   */
+  private $entityTypeManager;
+
+  /**
+   * @var MenuLinkTreeInterface
+   */
+  private $menuLinkTree;
+
+  /**
+   * @var LayoutPluginManagerInterface
+   */
+  private $layoutPluginManager;
+
+  /**
+   * @var ContextHandlerInterface
+   */
+  private $contextHandler;
+
+  /**
+   * @var ContextRepositoryInterface
+   */
+  private $contextRepository;
+
+  /**
+   * MegaMenuBlock constructor.
+   *
+   * {@inheritdoc}
+   *
+   * @param EntityTypeManagerInterface $entityTypeManager
+   *   The Drupal entity type manager.
+   */
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    EntityTypeManagerInterface $entityTypeManager,
+    MenuLinkTreeInterface $menuLinkTree,
+    LayoutPluginManagerInterface $layoutPluginManager,
+    ContextHandlerInterface $contextHandler,
+    ContextRepositoryInterface $contextRepository
+  ) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->entityTypeManager = $entityTypeManager;
+    $this->menuLinkTree = $menuLinkTree;
+    $this->layoutPluginManager = $layoutPluginManager;
+    $this->contextHandler = $contextHandler;
+    $this->contextRepository = $contextRepository;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('entity.manager'),
+      $container->get('mega_menu.link_tree'),
+      $container->get('plugin.manager.layout_plugin'),
+      $container->get('context.handler'),
+      $container->get('context.repository')
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function defaultConfiguration() {
+    return [
+      'mega_menu' => NULL,
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function build() {
+    $mega_menu = $this->loadMegaMenu('primary_navigation');
+
+    // Use the menu tree as the base build.
+    $build = $this->buildMegaMenuTree();
+
+    $build['#attached']['library'][] = 'mega_menu/menu';
+
+    // Apply cache data from the mega menu.
+    CacheableMetadata::createFromRenderArray($build)
+      ->addCacheableDependency($mega_menu)
+      ->applyTo($build);
+
+    return $build;
+  }
+
+  /**
+   * Build the mega menu link/content tree.
+   *
+   * @param string $mega_menu_id
+   *
+   * @return array
+   */
+  private function buildMegaMenuTree($mega_menu_id = 'primary_navigation') {
+    $mega_menu = $this->loadMegaMenu($mega_menu_id);
+    $tree = $this->loadMenuTree($mega_menu->getTargetMenu());
+
+    $build = $this->menuLinkTree->build($tree);
+
+    $cacheability = CacheableMetadata::createFromRenderArray($build);
+
+    // Add content from the mega menus to the link tree.
+    foreach ($build['#items'] as $item_key => $item) {
+      $safe_item_key = str_replace('.', '_', $item_key);
+
+      $layout = $mega_menu->getLinkLayout($safe_item_key);
+
+      if ($layout === MegaMenuInterface::NO_LAYOUT) {
+        continue;
+      }
+
+      /** @var LayoutInterface $layout_plugin */
+      $layout_plugin = $this->layoutPluginManager->createInstance($layout);
+      $plugin_definition = $layout_plugin->getPluginDefinition();
+
+      // Build an array of the region names in the right order.
+      $empty = array_fill_keys(array_keys($plugin_definition['region_names']), []);
+      $full = $mega_menu->getBlocksByLink($safe_item_key)->getAllByRegion();
+
+      // Merge it with the actual values to maintain the ordering.
+      $block_assignments = array_intersect_key(array_merge($empty, $full), $empty);
+
+      $build['#items'][$item_key]['content'] = [
+        '#theme' => $plugin_definition['theme'],
+        '#settings' => [],
+        '#layout' => $plugin_definition,
+      ];
+
+      if (isset($plugin_definition['library'])) {
+        $build['#items'][$item_key]['content']['#attached']['library'][] = $plugin_definition['library'];
+      }
+
+      foreach ($block_assignments as $region => $blocks) {
+        $build['#items'][$item_key]['content'][$region] = [];
+
+        /** @var \Drupal\Core\Block\BlockPluginInterface[] $blocks */
+        foreach ($blocks as $block_id => $block) {
+
+          if ($block instanceof ContextAwarePluginInterface) {
+            $contexts = $this->contextRepository->getRuntimeContexts($block->getContextMapping());
+            $this->contextHandler->applyContextMapping($block, $contexts);
+          }
+
+          $configuration = $block->getConfiguration();
+
+          // Create the render array for the block as a whole.
+          // @see template_preprocess_block().
+          $block_build = [
+            '#theme' => 'block',
+            '#attributes' => [],
+            '#weight' => $configuration['weight'],
+            '#configuration' => $configuration,
+            '#plugin_id' => $block->getPluginId(),
+            '#base_plugin_id' => $block->getBaseId(),
+            '#derivative_plugin_id' => $block->getDerivativeId(),
+            '#block_plugin' => $block,
+            '#pre_render' => [[$this, 'preRenderBlock']],
+            '#cache' => [
+              'keys' => ['mega_menu', $mega_menu->id(), 'block', $block_id],
+              'tags' => Cache::mergeTags($mega_menu->getCacheTags(), $block->getCacheTags()),
+              'contexts' => $block->getCacheContexts(),
+              'max-age' => $block->getCacheMaxAge(),
+            ],
+          ];
+
+          $build['#items'][$item_key]['content'][$region][$block_id] = $block_build;
+
+          $cacheability->addCacheableDependency($block);
+        }
+      }
+    }
+
+    $cacheability->applyTo($build);
+
+    return $build;
+  }
+
+  /**
+   * Renders the content using the provided block plugin.
+   *
+   * @param array $build
+   *
+   * @return array
+   */
+  public function preRenderBlock($build) {
+    $content = $build['#block_plugin']->build();
+
+    unset($build['#block_plugin']);
+
+    // Abort rendering: render as the empty string and ensure this block is
+    // render cached, so we can avoid the work of having to repeatedly
+    // determine whether the block is empty. E.g. modifying or adding entities
+    // could cause the block to no longer be empty.
+    if (is_null($content) || Element::isEmpty($content)) {
+      $build = [
+        '#markup' => '',
+        '#cache' => $build['#cache'],
+      ];
+
+      // If $content is not empty, then it contains cacheability metadata, and
+      // we must merge it with the existing cacheability metadata. This allows
+      // blocks to be empty, yet still bubble cacheability metadata, to indicate
+      // why they are empty.
+      if (!empty($content)) {
+        CacheableMetadata::createFromRenderArray($build)
+          ->merge(CacheableMetadata::createFromRenderArray($content))
+          ->applyTo($build);
+      }
+    }
+    else {
+      $build['content'] = $content;
+    }
+
+    return $build;
+  }
+
+  /**
+   * Load a mega menu entity.
+   *
+   * @param $mega_menu_id
+   *
+   * @return MegaMenuInterface|null
+   */
+  private function loadMegaMenu($mega_menu_id) {
+    return $this->entityTypeManager
+      ->getStorage('mega_menu')
+      ->load($mega_menu_id);
+  }
+
+  /**
+   * Load a list of menu tree elements.
+   *
+   * @param $menu_id
+   *
+   * @return MenuLinkTreeElement[]
+   */
+  private function loadMenuTree($menu_id) {
+    $parameters = (new MenuTreeParameters())
+      ->setMaxDepth(1);
+
+    return $this->menuLinkTree->load($menu_id, $parameters);
+  }
+}

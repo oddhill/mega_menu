@@ -1,0 +1,4 @@
+services:
+  mega_menu.link_tree:
+    class: Drupal\mega_menu\Menu\MegaMenuLinkTree
+    arguments: ['@menu.tree_storage', '@plugin.manager.menu.link', '@router.route_provider', '@menu.active_trail', '@controller_resolver', '@cache.menu', '@current_route_match']

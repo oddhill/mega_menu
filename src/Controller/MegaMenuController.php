@@ -10,6 +10,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\mega_menu\Contract\MegaMenuInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 class MegaMenuController implements ContainerInjectionInterface {
 
@@ -51,11 +52,16 @@ class MegaMenuController implements ContainerInjectionInterface {
   /**
    * Get a list of blocks that can be placed in a mega menu.
    *
+   * @param Request $request
    * @param MegaMenuInterface $mega_menu
-   *
    * @return array
    */
-  public function blockLibrary(MegaMenuInterface $mega_menu) {
+  public function blockLibrary(Request $request, MegaMenuInterface $mega_menu) {
+
+    // Get the query parameters needed.
+    $link = $request->query->get('link');
+    $region = $request->query->get('region');
+
     // Only add blocks which work without any available context.
     $blocks = $this->blockManager
       ->getDefinitionsForContexts($this->contextRepository->getAvailableContexts());
@@ -98,9 +104,14 @@ class MegaMenuController implements ContainerInjectionInterface {
       $links = [
         'add' => [
           'title' => $this->t('Place block'),
-          'url' => Url::fromRoute('mega_menu.block_library', [
+          'url' => Url::fromRoute('mega_menu.block_add', [
             'mega_menu' => $mega_menu->id(),
             'block_id' => $block_id,
+          ], [
+            'query' => [
+              'link' => $link,
+              'region' => $region,
+            ],
           ]),
           'attributes' => [
             'class' => ['use-ajax'],

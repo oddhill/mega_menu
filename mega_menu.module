@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Main module file for the Mega Menu module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function mega_menu_theme() {
+
+  $items['menu__mega_menu'] = [
+    'base hook' => 'menu',
+    'variables' => [
+      'items' => [],
+      'attributes' => []
+    ],
+  ];
+
+  return $items;
+}
