@@ -1,0 +1,20 @@
+{
+  "name": "drupal/mega_menu",
+  "description": "Allows you to create mega menus.",
+  "type": "drupal-module",
+  "license": "MIT",
+  "homepage": "https://github.com/oddhill/mega_menu",
+  "authors": [
+    {
+      "name": "Christoffer Palm",
+      "email": "christoffer.palm@oddhill.se",
+      "homepage": "http://www.oddhill.se/",
+      "role": "Developer"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/oddhill/mega_menu/issues",
+    "source": "https://github.com/oddhill/mega_menu",
+    "docs": "https://github.com/oddhill/mega_menu"
+  }
+}
