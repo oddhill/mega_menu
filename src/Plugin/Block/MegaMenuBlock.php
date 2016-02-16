@@ -14,6 +14,7 @@ use Drupal\Core\Plugin\Context\ContextHandlerInterface;
 use Drupal\Core\Plugin\Context\ContextRepositoryInterface;
 use Drupal\Core\Plugin\ContextAwarePluginInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\layout_plugin\Plugin\Layout\LayoutInterface;
 use Drupal\layout_plugin\Plugin\Layout\LayoutPluginManagerInterface;
 use Drupal\mega_menu\Contract\MegaMenuInterface;
@@ -33,27 +34,32 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
   /**
    * @var EntityTypeManagerInterface
    */
-  private $entityTypeManager;
+  protected $entityTypeManager;
 
   /**
    * @var MenuLinkTreeInterface
    */
-  private $menuLinkTree;
+  protected $menuLinkTree;
 
   /**
    * @var LayoutPluginManagerInterface
    */
-  private $layoutPluginManager;
+  protected $layoutPluginManager;
 
   /**
    * @var ContextHandlerInterface
    */
-  private $contextHandler;
+  protected $contextHandler;
 
   /**
    * @var ContextRepositoryInterface
    */
-  private $contextRepository;
+  protected $contextRepository;
+
+  /**
+   * @var AccountInterface
+   */
+  protected $account;
 
   /**
    * MegaMenuBlock constructor.
@@ -71,7 +77,8 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
     MenuLinkTreeInterface $menuLinkTree,
     LayoutPluginManagerInterface $layoutPluginManager,
     ContextHandlerInterface $contextHandler,
-    ContextRepositoryInterface $contextRepository
+    ContextRepositoryInterface $contextRepository,
+    AccountInterface $account
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->entityTypeManager = $entityTypeManager;
@@ -79,6 +86,7 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
     $this->layoutPluginManager = $layoutPluginManager;
     $this->contextHandler = $contextHandler;
     $this->contextRepository = $contextRepository;
+    $this->account = $account;
   }
 
   /**
@@ -93,7 +101,8 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
       $container->get('mega_menu.link_tree'),
       $container->get('plugin.manager.layout_plugin'),
       $container->get('context.handler'),
-      $container->get('context.repository')
+      $container->get('context.repository'),
+      $container->get('current_user')
     );
   }
 
@@ -180,6 +189,15 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
           if ($block instanceof ContextAwarePluginInterface) {
             $contexts = $this->contextRepository->getRuntimeContexts($block->getContextMapping());
             $this->contextHandler->applyContextMapping($block, $contexts);
+          }
+
+          // Make sure the user is allowed to view the block.
+          $access = $block->access($this->account, TRUE);
+          $cacheability->addCacheableDependency($access);
+
+          // If the user is not allowed then do not render the block.
+          if (!$access->isAllowed()) {
+            continue;
           }
 
           $configuration = $block->getConfiguration();
