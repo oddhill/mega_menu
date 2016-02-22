@@ -27,7 +27,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * @Block(
  *   id = "mega_menu_block",
  *   admin_label = @Translation("Mega menu"),
- *   category = @Translation("Mega menu")
+ *   category = @Translation("Mega menu"),
+ *   deriver = "Drupal\mega_menu\Plugin\Derivative\MegaMenuBlock"
  * )
  */
 class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface {
@@ -110,42 +111,8 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
   /**
    * {@inheritdoc}
    */
-  public function defaultConfiguration() {
-    return [
-      'mega_menu' => NULL,
-    ];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function blockForm($form, FormStateInterface $form_state) {
-
-    $form['mega_menu'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Mega menu'),
-      '#description' => $this->t('Select the mega menu to render with this block.'),
-      '#empty_option' => $this->t('- Select a menu -'),
-      '#options' => $this->getMegaMenuOptions(),
-      '#default_value' => $this->configuration['mega_menu'],
-      '#required' => TRUE,
-    ];
-
-    return $form;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function blockSubmit($form, FormStateInterface $form_state) {
-    $this->configuration['mega_menu'] = $form_state->getValue('mega_menu', NULL);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function build() {
-    $mega_menu = $this->loadMegaMenu($this->configuration['mega_menu']);
+    $mega_menu = $this->loadMegaMenu($this->getDerivativeId());
 
     // Use the menu tree as the base build.
     $build = $this->buildMegaMenuTree($mega_menu);
