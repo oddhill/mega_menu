@@ -16,5 +16,8 @@
     "issues": "https://github.com/oddhill/mega_menu/issues",
     "source": "https://github.com/oddhill/mega_menu",
     "docs": "https://github.com/oddhill/mega_menu"
+  },
+  "require": {
+    "drupal/layout_plugin": "~8.1.0"
   }
 }
