@@ -6,6 +6,7 @@ use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Menu\MenuLinkTreeElement;
 use Drupal\Core\Menu\MenuLinkTreeInterface;
 use Drupal\Core\Menu\MenuTreeParameters;
@@ -118,18 +119,38 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
   /**
    * {@inheritdoc}
    */
+  public function blockForm($form, FormStateInterface $form_state) {
+
+    $form['mega_menu'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Mega menu'),
+      '#description' => $this->t('Select the mega menu to render with this block.'),
+      '#empty_option' => $this->t('- Select a menu -'),
+      '#options' => $this->getMegaMenuOptions(),
+      '#default_value' => $this->configuration['mega_menu'],
+      '#required' => TRUE,
+    ];
+
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function blockSubmit($form, FormStateInterface $form_state) {
+    $this->configuration['mega_menu'] = $form_state->getValue('mega_menu', NULL);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function build() {
-    $mega_menu = $this->loadMegaMenu('primary_navigation');
+    $mega_menu = $this->loadMegaMenu($this->configuration['mega_menu']);
 
     // Use the menu tree as the base build.
-    $build = $this->buildMegaMenuTree();
+    $build = $this->buildMegaMenuTree($mega_menu);
 
     $build['#attached']['library'][] = 'mega_menu/menu';
-
-    // Apply cache data from the mega menu.
-    CacheableMetadata::createFromRenderArray($build)
-      ->addCacheableDependency($mega_menu)
-      ->applyTo($build);
 
     return $build;
   }
@@ -137,17 +158,17 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
   /**
    * Build the mega menu link/content tree.
    *
-   * @param string $mega_menu_id
+   * @param MegaMenuInterface $mega_menu
    *
    * @return array
    */
-  private function buildMegaMenuTree($mega_menu_id = 'primary_navigation') {
-    $mega_menu = $this->loadMegaMenu($mega_menu_id);
+  private function buildMegaMenuTree($mega_menu) {
     $tree = $this->loadMenuTree($mega_menu->getTargetMenu());
 
     $build = $this->menuLinkTree->build($tree);
 
     $cacheability = CacheableMetadata::createFromRenderArray($build);
+    $cacheability->addCacheableDependency($mega_menu);
 
     // Add content from the mega menus to the link tree.
     foreach ($build['#items'] as $item_key => $item) {
@@ -298,5 +319,24 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
       ->setMaxDepth(1);
 
     return $this->menuLinkTree->load($menu_id, $parameters);
+  }
+
+  /**
+   * Get a list of options for the mega menu select.
+   *
+   * @return array
+   */
+  private function getMegaMenuOptions() {
+    $options = [];
+
+    $mega_menus = $this->entityTypeManager
+      ->getStorage('mega_menu')
+      ->loadMultiple();
+
+    foreach ($mega_menus as $mega_menu) {
+      $options[$mega_menu->id()] = $mega_menu->label();
+    }
+
+    return $options;
   }
 }
