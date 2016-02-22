@@ -2,7 +2,6 @@
 
 namespace Drupal\mega_menu\Contract;
 
-use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Config\Entity\ConfigEntityInterface;
 use Drupal\ctools\Plugin\BlockPluginCollection;
 
