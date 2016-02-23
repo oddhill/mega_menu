@@ -144,9 +144,7 @@ abstract class MegaMenuFormBase extends EntityForm {
    * @return array
    */
   protected function getDefaultRegions() {
-   return [
-     MegaMenuInterface::NO_REGION => $this->t('No region'),
-   ];
+   return [];
   }
 
   /**
