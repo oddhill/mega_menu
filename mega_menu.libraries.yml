@@ -8,6 +8,7 @@ menu:
   dependencies:
     - core/drupal
     - core/jquery
+    - core/jquery.once
     - core/drupalSettings
 
 admin:
@@ -17,3 +18,7 @@ admin:
   css:
     component:
       assets/css/mega_menu.admin.css: {}
+  dependencies:
+    - core/drupal
+    - core/jquery
+    - core/jquery.once
