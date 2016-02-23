@@ -198,7 +198,7 @@ class MegaMenu extends ConfigEntityBase implements MegaMenuInterface {
    * @return $this
    */
   public function removeBlock($link_id, $block_id) {
-    $this->getBlocksByLink($link_id)->remove($block_id);
+    $this->getBlocksByLink($link_id)->removeInstanceId($block_id);
 
     return $this;
   }
