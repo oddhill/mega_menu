@@ -3,7 +3,7 @@
  * Behaviours for mega menus.
  */
 
-(function ($, window) {
+(function ($, document) {
 
   'use strict';
 
@@ -17,27 +17,57 @@
    *   Attaches the behavior for the block filtering.
    */
   Drupal.behaviors.megaMenuToggler = {
-    attach: function (context, settings) {
-      var $megaMenuLinks = $('ul.mega-menu > li').once('mega-menu-toggler');
+    attach: function () {
+      var $megaMenuLinks = $('ul.mega-menu a').once('mega-menu-toggler');
+
+      $megaMenuLinks
+        .once('mega-menu-link-click')
+        .on('click.mega-menu', toggleContent);
+
+      $(document)
+        .once('mega-menu-document-click')
+        .on('click.mega-menu', onOutsideClick);
+
+      /**
+       * Handle clicks outside of the mega menu.
+       *
+       * @param event
+       */
+      function onOutsideClick(event) {
+        if (!$(event.target).closest('ul.mega-menu').length) {
+          hideContent();
+        }
+      }
+
+      /**
+       * Hide every menu except the current one.
+       */
+      function hideContent(current) {
+        var menuItemsContent = $($megaMenuLinks).siblings('div').not(current);
+
+        menuItemsContent
+          .hide()
+          .removeClass('visible');
+      }
 
       /**
        * Toggle menu link content on click.
        */
       function toggleContent(event) {
-        var element = $(event.currentTarget);
-        var content = $('> div', element);
+        var element = $(event.target);
+        var content = element.siblings('div');
 
         if (content.length) {
           event.preventDefault();
+
+          hideContent(content);
 
           content
             .toggle()
             .toggleClass('visible');
         }
       }
-
-      $megaMenuLinks.on('click.mega-menu', toggleContent);
     }
   };
 
-})(jQuery, window);
+})(jQuery, document);
