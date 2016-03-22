@@ -123,4 +123,11 @@ interface MegaMenuInterface extends ConfigEntityInterface {
    * @return $this
    */
   public function setLinkLayout($link_id, $layout_id);
+
+  /**
+   * Check to see if content should be rendered outside of the list.
+   *
+   * @return bool
+   */
+  public function shouldRenderContentOutside();
 }

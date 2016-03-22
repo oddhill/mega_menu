@@ -272,6 +272,7 @@ class MegaMenuEditForm extends MegaMenuFormBase {
     $entity->set('label', $form_state->getValue('label'));
     $entity->set('name', $form_state->getValue('name'));
     $entity->set('menu', $form_state->getValue('menu'));
+    $entity->set('render_content_outside', $form_state->getValue('render_content_outside'));
 
     foreach ($form_state->getValue('links', []) as $link_key => $link) {
       $entity->setLinkLayout($link_key, $link['layout']);

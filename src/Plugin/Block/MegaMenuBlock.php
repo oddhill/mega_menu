@@ -117,6 +117,10 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
     // Use the menu tree as the base build.
     $build = $this->buildMegaMenuTree($mega_menu);
 
+    $build['#attributes'] = [
+      'data-mega-menu' => $mega_menu->id(),
+    ];
+
     $build['#attached']['library'][] = 'mega_menu/menu';
 
     return $build;
@@ -129,10 +133,13 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
    *
    * @return array
    */
-  private function buildMegaMenuTree($mega_menu) {
+  private function buildMegaMenuTree(MegaMenuInterface $mega_menu) {
     $tree = $this->loadMenuTree($mega_menu->getTargetMenu());
 
     $build = $this->menuLinkTree->build($tree);
+
+    $build['#render_content_outside'] = (bool) $mega_menu->shouldRenderContentOutside();
+    $build['#content'] = [];
 
     $cacheability = CacheableMetadata::createFromRenderArray($build);
     $cacheability->addCacheableDependency($mega_menu);
@@ -147,6 +154,8 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
         continue;
       }
 
+      $build['#items'][$item_key]['attributes']['data-mega-menu-content-target'] = $item_key;
+
       /** @var LayoutInterface $layout_plugin */
       $layout_plugin = $this->layoutPluginManager->createInstance($layout);
       $plugin_definition = $layout_plugin->getPluginDefinition();
@@ -159,6 +168,8 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
       $block_assignments = array_intersect_key(array_merge($empty, $full), $empty);
 
       $build['#items'][$item_key]['content'] = [
+        '#prefix' => '<div data-mega-menu-content="'.$item_key.'" class="mega-menu-content">',
+        '#suffix' => '</div>',
         '#theme' => $plugin_definition['theme'],
         '#settings' => [],
         '#layout' => $plugin_definition,
@@ -211,6 +222,7 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
           ];
 
           $build['#items'][$item_key]['content'][$region][$block_id] = $block_build;
+          $build['#content'][$item_key] = $build['#items'][$item_key]['content'];
 
           $cacheability->addCacheableDependency($block);
         }

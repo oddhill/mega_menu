@@ -14,7 +14,9 @@ function mega_menu_theme() {
     'base hook' => 'menu',
     'variables' => [
       'items' => [],
-      'attributes' => []
+      'content' => [],
+      'render_content_outside' => FALSE,
+      'attributes' => [],
     ],
   ];
 

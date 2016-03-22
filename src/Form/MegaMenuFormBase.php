@@ -103,6 +103,13 @@ abstract class MegaMenuFormBase extends EntityForm {
       '#disabled' => $this->entity->getTargetMenu() ? TRUE : FALSE,
     ];
 
+    $form['general']['render_content_outside'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Render content outside of list'),
+      '#description' => $this->t('Check this box if you want to render the mega menu dropdown content outside of the list.'),
+      '#default_value' => $this->entity->get('render_content_outside'),
+    ];
+
     return $form;
   }
 

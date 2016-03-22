@@ -37,6 +37,7 @@ use Drupal\mega_menu\Contract\MegaMenuInterface;
  *     "label",
  *     "menu",
  *     "links",
+ *     "render_content_outside",
  *   }
  * )
  */
@@ -86,6 +87,13 @@ class MegaMenu extends ConfigEntityBase implements MegaMenuInterface {
    * @var array
    */
   protected $links = [];
+
+  /**
+   * If the mega menu content should be rendered outside of the list.
+   *
+   * @var boolean
+   */
+  protected $render_content_outside = FALSE;
 
   /**
    * {@inheritdoc}
@@ -243,10 +251,24 @@ class MegaMenu extends ConfigEntityBase implements MegaMenuInterface {
     return $this;
   }
 
+  /**
+   * Pre-save hook.
+   *
+   * @param EntityStorageInterface $storage
+   */
   public function preSave(EntityStorageInterface $storage) {
     // Save block configuration to the links.
     foreach ($this->block_collections as $key => $collection) {
       $this->links[$key]['blocks'] = $collection->getConfiguration();
     }
+  }
+
+  /**
+   * Check to see if content should be rendered outside of the list.
+   *
+   * @return bool
+   */
+  public function shouldRenderContentOutside() {
+    return $this->render_content_outside;
   }
 }

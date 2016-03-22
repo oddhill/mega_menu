@@ -8,6 +8,71 @@
   'use strict';
 
   /**
+   * The main mega menu functionality as a jQuery plugin.
+   */
+  $.fn.megamenu = function() {
+    var $element = this;
+    var $links = $element.find('[data-mega-menu-content-target] > a');
+    var $content = $element.find('[data-mega-menu-content]');
+
+    // Initialize the content as hidden.
+    $content.hide();
+
+    // Bind events.
+    $links.on('click.mega-menu', toggleContent);
+    $(document).on('click.mega-menu', onOutsideClick);
+
+    /**
+     * Public method to close the mega menu.
+     */
+    this.close = function () {
+      $element.trigger('closing');
+      hideContent();
+    };
+
+    /**
+     * Handle clicks outside of the mega menu.
+     *
+     * @param event
+     */
+    function onOutsideClick(event) {
+      if (!$(event.target).closest($element).length) {
+        hideContent();
+      }
+    }
+
+    /**
+     * Hide every menu except the current one.
+     */
+    function hideContent(current) {
+      var elements = $content.not(current);
+      elements.hide().removeClass('visible');
+    }
+
+    /**
+     * Toggle menu link content on click.
+     */
+    function toggleContent(event) {
+      var element = $(event.target);
+      var menuTarget = element.closest('li').data('mega-menu-content-target');
+
+      if (!menuTarget.length) {
+        return;
+      }
+
+      var content = $content.filter('[data-mega-menu-content="' + menuTarget + '"]');
+
+      if (content.length) {
+        event.preventDefault();
+
+        hideContent(content);
+
+        content.toggle().toggleClass('visible');
+      }
+    }
+  };
+
+  /**
    * Toggles a mega menus content visibility depending on what was set in the
    * mega menu configuration.
    *
@@ -18,55 +83,9 @@
    */
   Drupal.behaviors.megaMenuToggler = {
     attach: function () {
-      var $megaMenuLinks = $('ul.mega-menu a').once('mega-menu-toggler');
-
-      $megaMenuLinks
-        .once('mega-menu-link-click')
-        .on('click.mega-menu', toggleContent);
-
-      $(document)
-        .once('mega-menu-document-click')
-        .on('click.mega-menu', onOutsideClick);
-
-      /**
-       * Handle clicks outside of the mega menu.
-       *
-       * @param event
-       */
-      function onOutsideClick(event) {
-        if (!$(event.target).closest('ul.mega-menu').length) {
-          hideContent();
-        }
-      }
-
-      /**
-       * Hide every menu except the current one.
-       */
-      function hideContent(current) {
-        var menuItemsContent = $($megaMenuLinks).siblings('div').not(current);
-
-        menuItemsContent
-          .hide()
-          .removeClass('visible');
-      }
-
-      /**
-       * Toggle menu link content on click.
-       */
-      function toggleContent(event) {
-        var element = $(event.target);
-        var content = element.siblings('div');
-
-        if (content.length) {
-          event.preventDefault();
-
-          hideContent(content);
-
-          content
-            .toggle()
-            .toggleClass('visible');
-        }
-      }
+      $('[data-mega-menu]').once('mega-menu').each(function (key, item) {
+        $(item).megamenu();
+      });
     }
   };
 
