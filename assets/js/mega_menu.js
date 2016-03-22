@@ -36,9 +36,9 @@
     /**
      * Trigger the on closing event.
      */
-    function triggerClosingEvent() {
+    function triggerClosingEvent(target) {
       var event = jQuery.Event('mega-menu:closing', {
-        target: $element
+        target: target || $element
       });
 
       $element.trigger(event);
@@ -55,7 +55,7 @@
      */
     function onOutsideClick(event) {
       if (!$(event.target).closest($element).length) {
-        triggerClosingEvent();
+        triggerClosingEvent(event.target);
       }
     }
 
