@@ -9,6 +9,10 @@
 
   /**
    * The main mega menu functionality as a jQuery plugin.
+   *
+   * Available events:
+   *   - mega-menu:closing: Event will be triggered when the menu is closing a
+   *     panel and not opening up another one.
    */
   $.fn.megamenu = function() {
     var $element = this;
@@ -26,9 +30,23 @@
      * Public method to close the mega menu.
      */
     this.close = function () {
-      $element.trigger('closing');
-      hideContent();
+      triggerClosingEvent();
     };
+
+    /**
+     * Trigger the on closing event.
+     */
+    function triggerClosingEvent() {
+      var event = jQuery.Event('mega-menu:closing', {
+        target: $element
+      });
+
+      $element.trigger(event);
+
+      if (!event.isDefaultPrevented()) {
+        hideContent();
+      }
+    }
 
     /**
      * Handle clicks outside of the mega menu.
@@ -37,7 +55,7 @@
      */
     function onOutsideClick(event) {
       if (!$(event.target).closest($element).length) {
-        hideContent();
+        triggerClosingEvent();
       }
     }
 
@@ -62,13 +80,22 @@
 
       var content = $content.filter('[data-mega-menu-content="' + menuTarget + '"]');
 
-      if (content.length) {
-        event.preventDefault();
-
-        hideContent(content);
-
-        content.toggle().toggleClass('visible');
+      if (!content.length) {
+        return;
       }
+
+      // If the content that is being toggles is already visible then the menu
+      // should be completely closed to trigger a closing event to close
+      // the menu.
+      if (content.is(':visible')) {
+        triggerClosingEvent();
+      }
+      else {
+        hideContent(content);
+        content.show().addClass('visible');
+      }
+
+      event.preventDefault();
     }
   };
 
