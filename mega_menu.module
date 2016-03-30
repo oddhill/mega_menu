@@ -11,7 +11,6 @@
 function mega_menu_theme() {
 
   $items['menu__mega_menu'] = [
-    'base hook' => 'menu',
     'variables' => [
       'mega_menu' => NULL,
       'items' => [],
@@ -47,4 +46,20 @@ function mega_menu_preprocess_menu__mega_menu(&$variables) {
     }
     $variables['content'][$item_key] = $item['content'];
   }
+}
+
+/**
+ * Add theme suggestions for the mega menu templates.
+ *
+ * Implements hook_theme_suggestions_HOOK().
+ */
+function mega_menu_theme_suggestions_menu__mega_menu(array $variables) {
+  $suggestions = [];
+
+  /** @var \Drupal\mega_menu\Contract\MegaMenuInterface $mega_menu */
+  $mega_menu = $variables['mega_menu'];
+  
+  $suggestions[] = 'menu__mega_menu__' . $mega_menu->getTargetMenu();
+
+  return $suggestions;
 }
