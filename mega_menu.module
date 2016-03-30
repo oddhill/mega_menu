@@ -29,6 +29,12 @@ function mega_menu_theme() {
  * @param $variables
  */
 function mega_menu_preprocess_menu__mega_menu(&$variables) {
+  // If for some reason a mega menu has not been set to the variables then do
+  // not do anything since there is nothing to process.
+  if (!isset($variables['mega_menu'])) {
+    return;
+  }
+
   /** @var \Drupal\mega_menu\Contract\MegaMenuInterface $mega_menu */
   $mega_menu = $variables['mega_menu'];
 
@@ -46,20 +52,4 @@ function mega_menu_preprocess_menu__mega_menu(&$variables) {
     }
     $variables['content'][$item_key] = $item['content'];
   }
-}
-
-/**
- * Add theme suggestions for the mega menu templates.
- *
- * Implements hook_theme_suggestions_HOOK().
- */
-function mega_menu_theme_suggestions_menu__mega_menu(array $variables) {
-  $suggestions = [];
-
-  /** @var \Drupal\mega_menu\Contract\MegaMenuInterface $mega_menu */
-  $mega_menu = $variables['mega_menu'];
-  
-  $suggestions[] = 'menu__mega_menu__' . $mega_menu->getTargetMenu();
-
-  return $suggestions;
 }

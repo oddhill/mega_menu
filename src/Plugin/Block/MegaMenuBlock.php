@@ -117,8 +117,6 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
     // Use the menu tree as the base build.
     $build = $this->buildMegaMenuTree($mega_menu);
 
-    $build['#mega_menu'] = $mega_menu;
-
     $build['#attributes'] = [
       'data-mega-menu' => $mega_menu->id(),
     ];
@@ -139,6 +137,8 @@ class MegaMenuBlock extends BlockBase implements ContainerFactoryPluginInterface
     $tree = $this->loadMenuTree($mega_menu->getTargetMenu());
 
     $build = $this->menuLinkTree->build($tree);
+
+    $build['#mega_menu'] = $mega_menu;
 
     $cacheability = CacheableMetadata::createFromRenderArray($build);
     $cacheability->addCacheableDependency($mega_menu);
