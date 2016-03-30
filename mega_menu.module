@@ -13,6 +13,7 @@ function mega_menu_theme() {
   $items['menu__mega_menu'] = [
     'base hook' => 'menu',
     'variables' => [
+      'mega_menu' => NULL,
       'items' => [],
       'content' => [],
       'render_content_outside' => FALSE,
@@ -21,4 +22,29 @@ function mega_menu_theme() {
   ];
 
   return $items;
+}
+
+/**
+ * Preprocess the mega menu templates and add additional content if needed.
+ *
+ * @param $variables
+ */
+function mega_menu_preprocess_menu__mega_menu(&$variables) {
+  /** @var \Drupal\mega_menu\Contract\MegaMenuInterface $mega_menu */
+  $mega_menu = $variables['mega_menu'];
+
+  if (!$mega_menu->shouldRenderContentOutside()) {
+    return;
+  }
+
+  // Set the should render status to the variables.
+  $variables['render_content_outside'] = (bool) $mega_menu->shouldRenderContentOutside();
+
+  // Add each items content to the content array.
+  foreach ($variables['items'] as $item_key => $item) {
+    if (!isset($item['content']) && empty($item['content'])) {
+      continue;
+    }
+    $variables['content'][$item_key] = $item['content'];
+  }
 }
