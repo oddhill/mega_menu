@@ -11,25 +11,27 @@
  * @see menu.html.twig for additional variables.
  */
 #}
-{% if items %}
-  {% if menu_level == 0 %}
-    <ul {{ attributes.addClass('mega-menu') }}>
-  {% else %}
-    <ul>
+<div {{ attributes.addClass('mega-menu') }}>
+  {% if items %}
+    {% if menu_level == 0 %}
+      <ul>
+    {% else %}
+      <ul>
+    {% endif %}
+
+    {% for item in items %}
+      <li{{ item.attributes }}>
+        {{ link(item.title, item.url) }}
+
+        {% if item.content and render_content_outside == false %}
+          {{ item.content }}
+        {% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+
+    {% if render_content_outside == true %}
+      {{ content }}
+    {% endif %}
   {% endif %}
-
-  {% for item in items %}
-    <li{{ item.attributes }}>
-      {{ link(item.title, item.url) }}
-
-      {% if item.content and render_content_outside == false %}
-        {{ item.content }}
-      {% endif %}
-    </li>
-  {% endfor %}
-  </ul>
-
-  {% if render_content_outside == true %}
-    {{ content }}
-  {% endif %}
-{% endif %}
+</div>
