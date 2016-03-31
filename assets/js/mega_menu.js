@@ -20,8 +20,10 @@
    */
   $.fn.megamenu = function() {
     var $element = this;
-    var $links = $element.find('[data-mega-menu-content-target] > a');
+
     var $content = $element.find('[data-mega-menu-content]');
+    var $listItems = $element.find('[data-mega-menu-content-target]');
+    var $links = $listItems.children('a');
 
     $links.on('click.mega-menu', onMenuItemClick);
     $(document).on('click.mega-menu', onOutsideClick);
@@ -55,6 +57,7 @@
 
       if (!event.isDefaultPrevented()) {
         showContent(target);
+        activateListItem(target);
       }
     }
 
@@ -82,6 +85,8 @@
 
       hideOtherContent(target);
       showContent(target);
+      deactivateListItem(previousTarget);
+      activateListItem(target);
     }
 
     /**
@@ -99,6 +104,7 @@
 
       if (!event.isDefaultPrevented()) {
         hideContent();
+        deactivateListItems();
       }
     }
 
@@ -128,6 +134,7 @@
      */
     function hideContent() {
       $content.removeClass('visible');
+      deactivateListItems();
     }
 
     /**
@@ -136,7 +143,45 @@
      * @param {Object} element - The content element to show.
      */
     function showContent(element) {
+      activateListItem(element);
       element.addClass('visible');
+    }
+
+    /**
+     * Get the specified content elements target list item.
+     *
+     * @param {Object} element
+     * @returns {*|HTMLElement}
+     */
+    function getTargetListItem(element) {
+      var targetId = element.data('mega-menu-content');
+      return $('[data-mega-menu-content-target="'+targetId+'"]');
+    }
+
+    /**
+     * De-activate all list items.
+     */
+    function deactivateListItems() {
+      $listItems.removeClass('active');
+    }
+
+    /**
+     * Activate the specified content elements list item.
+     *
+     * @param {Object} element
+     */
+    function activateListItem(element) {
+      getTargetListItem(element).addClass('active');
+    }
+
+    /**
+     * De-activate the specified content elements list item.
+     *
+     * @param {Object} element
+     */
+    function deactivateListItem(element) {
+      console.log(getTargetListItem(element));
+      getTargetListItem(element).removeClass('active');
     }
 
     /**
