@@ -114,9 +114,18 @@
      * @param {Object} event
      */
     function onOutsideClick(event) {
-      if (!$(event.target).closest($element).length) {
+      if (!$(event.target).closest($element).length && menuIsOpen()) {
         triggerClosingEvent(event.target);
       }
+    }
+
+    /**
+     * Check to see if the menu is open based on class values.
+     *
+     * @returns {Boolean}
+     */
+    function menuIsOpen() {
+      return ($listItems.filter('.active').length || $content.filter('.visible').length) ? true : false;
     }
 
     /**
@@ -180,7 +189,6 @@
      * @param {Object} element
      */
     function deactivateListItem(element) {
-      console.log(getTargetListItem(element));
       getTargetListItem(element).removeClass('active');
     }
 
