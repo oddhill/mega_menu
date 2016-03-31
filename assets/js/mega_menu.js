@@ -66,7 +66,7 @@
      * @param {Object} target - The target element.
      */
     function triggerChangingEvent(target) {
-      var previousTarget = $content.filter('.active');
+      var previousTarget = $content.filter('.visible');
 
       var event = jQuery.Event('mega-menu:changing', {
         previousTarget: previousTarget,
