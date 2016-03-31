@@ -72,8 +72,10 @@
       var previousTarget = $content.filter('.visible');
 
       var event = jQuery.Event('mega-menu:changing', {
-        previousTarget: previousTarget,
-        currentTarget: target,
+        megaMenu: {
+          previousTarget: previousTarget,
+          currentTarget: target
+        },
         target: target
       });
 
