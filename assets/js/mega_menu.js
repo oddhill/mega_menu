@@ -25,22 +25,25 @@
     var $listItems = $element.find('[data-mega-menu-content-target]');
     var $links = $listItems.children('a');
 
-    $links.on('click.mega-menu', onMenuItemClick);
-    $(document).on('click.mega-menu', onOutsideClick);
-
     /**
      * Public method to close the mega menu.
      */
-    this.close = function () {
+    $.fn.megamenu.close = function () {
       triggerClosingEvent($element);
     };
 
     /**
      * Public method to open the mega menu.
      */
-    this.open = function () {
+    $.fn.megamenu.open = function () {
       triggerOpeningEvent($element);
     };
+
+    // Return to expose public methods.
+    return this.each(function() {
+      $links.on('click.mega-menu', onMenuItemClick);
+      $(document).on('click.mega-menu', onOutsideClick);
+    });
 
     /**
      * Trigger an opening event. This is used when the mega menu has no
